@@ -18,10 +18,13 @@ public class ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()
-                .getAuthentication().getName();
+                .getAuthentication()
+                .getName();
+
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
@@ -43,6 +46,7 @@ public class ApplicationService {
     // Jobseeker applies for a job
     public ApplicationResponse applyForJob(Long jobId,
                                            ApplicationRequest request) {
+
         User applicant = getCurrentUser();
 
         Job job = jobRepository.findById(jobId)
@@ -65,21 +69,38 @@ public class ApplicationService {
                 .coverLetter(request != null ? request.getCoverLetter() : null)
                 .build();
 
-        return toResponse(applicationRepository.save(application));
+        Application saved = applicationRepository.save(application);
+
+        // Email notification
+        emailService.sendApplicationConfirmation(
+                applicant.getEmail(),
+                applicant.getName(),
+                job.getTitle()
+        );
+
+        return toResponse(saved);
     }
 
     // Jobseeker apni saari applications dekhe
     public Page<ApplicationResponse> getMyApplications(int page, int size) {
+
         User applicant = getCurrentUser();
-        Pageable pageable = PageRequest.of(page, size,
-                Sort.by("appliedAt").descending());
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("appliedAt").descending()
+        );
+
         return applicationRepository.findByApplicant(applicant, pageable)
                 .map(this::toResponse);
     }
 
     // Recruiter ek job ke saare applicants dekhe
     public Page<ApplicationResponse> getApplicantsForJob(Long jobId,
-                                                         int page, int size) {
+                                                         int page,
+                                                         int size) {
+
         User recruiter = getCurrentUser();
 
         Job job = jobRepository.findById(jobId)
@@ -90,8 +111,12 @@ public class ApplicationService {
             throw new RuntimeException("Access denied");
         }
 
-        Pageable pageable = PageRequest.of(page, size,
-                Sort.by("appliedAt").descending());
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("appliedAt").descending()
+        );
+
         return applicationRepository.findByJob(job, pageable)
                 .map(this::toResponse);
     }
@@ -99,18 +124,37 @@ public class ApplicationService {
     // Recruiter application status update kare
     public ApplicationResponse updateStatus(Long applicationId,
                                             StatusUpdateRequest request) {
+
         User recruiter = getCurrentUser();
 
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
 
         // Sirf apni job ka status update kar sakta hai
-        if (!application.getJob().getRecruiter().getId()
+        if (!application.getJob()
+                .getRecruiter()
+                .getId()
                 .equals(recruiter.getId())) {
             throw new RuntimeException("Access denied");
         }
 
         application.setStatus(request.getStatus());
-        return toResponse(applicationRepository.save(application));
+
+        Application updated = applicationRepository.save(application);
+
+        // Status update email — sirf SHORTLISTED ya HIRED pe
+        if (request.getStatus() == ApplicationStatus.SHORTLISTED
+                || request.getStatus() == ApplicationStatus.HIRED) {
+
+            emailService.sendStatusUpdateEmail(
+                    updated.getApplicant().getEmail(),
+                    updated.getApplicant().getName(),
+                    updated.getJob().getTitle(),
+                    request.getStatus().name()
+            );
+        }
+
+        return toResponse(updated);
     }
 }
+
