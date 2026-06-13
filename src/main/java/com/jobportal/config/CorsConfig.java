@@ -13,6 +13,7 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOrigin("http://localhost:3000"); // React dev server
         config.addAllowedOrigin("https://your-app.vercel.app"); // deploy ke baad
+        config.addAllowedOrigin("https://*.vercel.app");
         config.addAllowedMethod("*");
         config.addAllowedHeader("*");
         config.setAllowCredentials(true);
