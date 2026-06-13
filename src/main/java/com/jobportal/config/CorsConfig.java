@@ -11,8 +11,8 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOrigin("http://localhost:3000"); // React dev server
-        config.addAllowedOrigin("https://your-app.vercel.app"); // deploy ke baad
+        config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOrigin("https://hyro-brown.vercel.app");
         config.addAllowedOrigin("https://*.vercel.app");
         config.addAllowedMethod("*");
         config.addAllowedHeader("*");
