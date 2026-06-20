@@ -63,7 +63,6 @@ public class User {
         private String password;
         private Role role;
         private boolean enabled = true;
-        private LocalDateTime createdAt;
 
         public UserBuilder id(Long id) { this.id = id; return this; }
         public UserBuilder name(String name) { this.name = name; return this; }

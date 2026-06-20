@@ -26,6 +26,30 @@ public class JobController {
                 ApiResponse.success("Jobs fetched", jobService.getAllJobs(page, size)));
     }
 
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<ApiResponse<Page<JobResponse>>> getMyJobs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(
+                ApiResponse.success("Your jobs", jobService.getMyJobs(page, size)));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<JobResponse>>> searchJobs(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String jobType,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Double minSalary,
+            @RequestParam(required = false) Double maxSalary,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(ApiResponse.success("Search results",
+                jobService.searchJobs(title, location, jobType,
+                        category, minSalary, maxSalary, page, size)));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<JobResponse>> getJobById(@PathVariable Long id) {
         return ResponseEntity.ok(
@@ -54,29 +78,5 @@ public class JobController {
     public ResponseEntity<ApiResponse<Void>> deleteJob(@PathVariable Long id) {
         jobService.deleteJob(id);
         return ResponseEntity.ok(ApiResponse.success("Job deleted", null));
-    }
-
-    @GetMapping("/my")
-    @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<ApiResponse<Page<JobResponse>>> getMyJobs(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(
-                ApiResponse.success("Your jobs", jobService.getMyJobs(page, size)));
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Page<JobResponse>>> searchJobs(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String location,
-            @RequestParam(required = false) String jobType,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) Double minSalary,
-            @RequestParam(required = false) Double maxSalary,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(ApiResponse.success("Search results",
-                jobService.searchJobs(title, location, jobType,
-                        category, minSalary, maxSalary, page, size)));
     }
 }
